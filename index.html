@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数字图形大冒险</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;background:#FFF8F0;min-height:100vh;min-height:100dvh;user-select:none;-webkit-tap-highlight-color:transparent;display:flex;justify-content:center;align-items:center;padding:12px}
+#app{width:100%;max-width:500px;background:#fff;border-radius:28px;padding:32px 24px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:center;min-height:80vh;min-height:80dvh;display:flex;flex-direction:column;justify-content:center}
+
+h1{font-size:30px;font-weight:900;background:linear-gradient(135deg,#FF6B6B,#FEC163,#4ADE80);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.sub{color:#999;font-size:15px;margin-bottom:18px}
+.stars{font-size:26px;font-weight:700;color:#FBBF24;margin-bottom:20px}
+
+/* 通用按钮 */
+.btn{display:inline-block;padding:14px 36px;border:none;border-radius:16px;font-size:18px;font-weight:800;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.btn:active{transform:scale(.95)}
+.btn-go{color:#fff;background:linear-gradient(135deg,#FF6B6B,#FEC163);box-shadow:0 6px 22px rgba(255,107,107,.3)}
+.btn-go:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(255,107,107,.4)}
+.btn-sm{padding:8px 18px;font-size:14px;border:2px solid #eee;border-radius:12px;background:#fff;color:#666;cursor:pointer}
+.btn-sm:hover{border-color:#FEC163}
+
+/* 关卡选择 */
+.lvls{margin:16px 0;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.lv{width:40px;height:40px;border-radius:10px;border:2px solid #eee;font-size:15px;font-weight:700;color:#555;background:#fff;cursor:pointer}
+.lv:hover{border-color:#FEC163;background:#FFF8F0}
+
+/* 规则面板 */
+#rules{margin-top:16px;padding-top:16px;border-top:2px solid #f5f5f5;display:none}
+#rules.show{display:block}
+.rgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.ritem{background:#FFF9F0;border-radius:10px;padding:6px 2px;text-align:center}
+.ritem svg{width:36px;height:36px}
+.rd{font-size:16px;font-weight:800;color:#555}.rn{font-size:10px;color:#aaa}
+
+/* ═══ 游戏页 ═══ */
+#game{display:none;flex:1;flex-direction:column}
+#game.on{display:flex}
+.gbar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fafafa;border-radius:14px;margin-bottom:16px;font-size:13px;font-weight:700;gap:4px;flex-wrap:wrap}
+.gbar .lvl{color:#FF6B6B}.gbar .prg{color:#666}.gbar .star{color:#FBBF24}.gbar .fire{color:#FB923C;font-size:12px}
+
+.prompt{font-size:17px;font-weight:700;color:#444;margin-bottom:12px}
+.puzzle{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.puz{background:#fff;border-radius:14px;padding:10px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.digitbox{width:60px;height:60px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#60A5FA,#3B82F6);color:#fff;font-size:30px;font-weight:900}
+
+.answer{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.slot{width:48px;height:48px;border-radius:12px;border:3px dashed #ddd;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#bbb;background:#fff}
+.slot.ok{border:3px solid #4ADE80;color:#444;background:#F0FFF4;animation:pop .2s ease}
+.slot.err{border-color:#F87171;background:#FFF0F0;color:#F87171}
+@keyframes pop{0%{transform:scale(.5)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+.msg{display:none;padding:12px 16px;background:#FFF5F5;border-radius:14px;border:2px solid #FECACA;margin-bottom:12px}
+.msg.on{display:block}
+.msg p{font-size:14px;color:#DC2626;font-weight:600;margin-bottom:6px}
+.msg .ca{font-size:20px;font-weight:900;color:#444;margin-bottom:8px}
+.msg .ca svg{display:inline-block;width:32px;height:32px;vertical-align:middle}
+
+/* 键盘 */
+.kbd{margin-top:auto}
+.row5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:380px;margin:0 auto 6px}
+.kn{aspect-ratio:1;border-radius:14px;border:2px solid #eee;font-size:22px;font-weight:800;color:#444;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:all .15s}
+.kn:active{transform:scale(.92);background:#FEC163;color:#fff;border-color:#FEC163}
+.ks{aspect-ratio:1;border-radius:14px;border:2px solid #eee;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.ks:active{transform:scale(.92);background:#FEF3C7}
+.ks svg{width:38px;height:38px}
+.act-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:380px;margin:0 auto}
+.abtn{border-radius:14px;border:none;font-size:26px;font-weight:800;cursor:pointer;padding:12px;transition:all .15s}
+.abtn:active{transform:scale(.94)}
+.abtn-bs{background:#F3F4F6;color:#999}.abtn-bs:hover{background:#E5E7EB}
+.abtn-ok{background:linear-gradient(135deg,#4ADE80,#22C55E);color:#fff;box-shadow:0 4px 14px rgba(34,197,94,.25)}
+.abtn-ok:disabled{opacity:.35;pointer-events:none}
+
+/* ═══ 结算页 ═══ */
+#result{display:none;flex:1;flex-direction:column;justify-content:center;align-items:center;animation:pop .4s ease}
+#result.on{display:flex}
+.result-emoji{font-size:64px;margin-bottom:8px}
+.result-title{font-size:26px;font-weight:900;color:#444;margin-bottom:4px}
+.result-sub{font-size:15px;color:#999;margin-bottom:14px}
+.result-score{font-size:42px;font-weight:900;color:#FBBF24;margin-bottom:20px}
+
+/* 烟花粒子 */
+#confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;overflow:hidden}
+.part{position:absolute;will-change:transform,opacity;pointer-events:none}
+
+/* 小屏适配 */
+@media(max-width:380px){#app{padding:20px 14px}h1{font-size:24px}.btn-go{padding:12px 28px;font-size:16px}.puz{padding:8px}}
+</style>
+</head>
+<body>
+<div id="confetti"></div>
+<div id="app">
+  <div id="home">
+    <h1>数字图形<br>大冒险</h1>
+    <p class="sub">找出图形对应的数字吧！</p>
+    <p class="stars">⭐ <span id="starCount">0</span></p>
+    <button class="btn btn-go" onclick="startGame(1)">🎮 开始第一关</button>
+    <p class="lvls" id="levelSelect"></p>
+    <button class="btn btn-sm" onclick="toggleRules()">📖 <span id="ruleLabel">查看规则</span></button>
+    <div id="rules"></div>
+  </div>
+  <div id="game"><div class="gbar"></div><div class="prompt"></div><div class="puzzle"></div><div class="answer"></div><div class="msg"></div><div class="kbd"></div></div>
+  <div id="result"></div>
+</div>
+
+<script>
+// ═══════════════════════ 图形 SVG 路径 ═══════════════════════
+const SVGS=[
+  `<svg viewBox="0 0 100 100" fill="none"><line x1="50" y1="85" x2="50" y2="20" stroke="#FBBF24" stroke-width="8" stroke-linecap="round"/><line x1="50" y1="20" x2="28" y2="48" stroke="#FBBF24" stroke-width="8" stroke-linecap="round"/><line x1="50" y1="20" x2="72" y2="48" stroke="#FBBF24" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="20" r="5" fill="#FBBF24"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><line x1="50" y1="15" x2="50" y2="80" stroke="#60A5FA" stroke-width="8" stroke-linecap="round"/><line x1="50" y1="80" x2="28" y2="52" stroke="#60A5FA" stroke-width="8" stroke-linecap="round"/><line x1="50" y1="80" x2="72" y2="52" stroke="#60A5FA" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="80" r="5" fill="#60A5FA"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><line x1="85" y1="50" x2="20" y2="50" stroke="#4ADE80" stroke-width="8" stroke-linecap="round"/><line x1="20" y1="50" x2="48" y2="28" stroke="#4ADE80" stroke-width="8" stroke-linecap="round"/><line x1="20" y1="50" x2="48" y2="72" stroke="#4ADE80" stroke-width="8" stroke-linecap="round"/><circle cx="20" cy="50" r="5" fill="#4ADE80"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><line x1="15" y1="50" x2="80" y2="50" stroke="#F87171" stroke-width="8" stroke-linecap="round"/><line x1="80" y1="50" x2="52" y2="28" stroke="#F87171" stroke-width="8" stroke-linecap="round"/><line x1="80" y1="50" x2="52" y2="72" stroke="#F87171" stroke-width="8" stroke-linecap="round"/><circle cx="80" cy="50" r="5" fill="#F87171"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="32" stroke="#C084FC" stroke-width="8"/><circle cx="50" cy="50" r="8" fill="#C084FC" opacity=".4"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><rect x="22" y="22" width="56" height="56" rx="12" stroke="#FB923C" stroke-width="8"/><rect x="40" y="40" width="20" height="20" rx="4" fill="#FB923C" opacity=".3"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><polygon points="50,18 88,78 12,78" stroke="#F472B6" stroke-width="8" stroke-linejoin="round"/><circle cx="50" cy="58" r="5" fill="#F472B6" opacity=".4"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><rect x="12" y="28" width="76" height="44" rx="10" stroke="#D4A574" stroke-width="8"/><line x1="38" y1="33" x2="38" y2="67" stroke="#D4A574" stroke-width="4" opacity=".4" stroke-linecap="round"/><line x1="62" y1="33" x2="62" y2="67" stroke="#D4A574" stroke-width="4" opacity=".4" stroke-linecap="round"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><polygon points="35,24 65,24 82,76 18,76" stroke="#2DD4BF" stroke-width="8" stroke-linejoin="round"/><line x1="35" y1="24" x2="65" y2="24" stroke="#2DD4BF" stroke-width="6" stroke-linecap="round" opacity=".4"/></svg>`,
+  `<svg viewBox="0 0 100 100" fill="none"><polygon points="50,10 62,38 92,38 68,58 78,88 50,68 22,88 32,58 8,38 38,38" stroke="#FACC15" stroke-width="6" stroke-linejoin="round" fill="#FEF3C7"/></svg>`
+];
+const SN=['向上箭头','向下箭头','向左箭头','向右箭头','圆形','正方形','三角形','长方形','梯形','五角星'];
+
+// ═══════════════════════ 工具 ═══════════════════════
+const $=id=>document.getElementById(id);
+function h(svg,w,h){return `<div style="width:${w}px;height:${h}px;display:flex;align-items:center;justify-content:center"><div style="width:${w*.85}px;height:${h*.85}px">${svg}</div></div>`}
+
+// ═══════════════════════ 持久化 / 规则 / 关卡 ═══════════════════════
+let totalStars=+(localStorage.getItem('dsgs')||0);
+let maxLevel=+(localStorage.getItem('dsgm')||1);
+function save(){localStorage.setItem('dsgs',totalStars);localStorage.setItem('dsgm',maxLevel)}
+$('starCount').textContent=totalStars;
+
+function toggleRules(){
+  const r=$('rules'),l=$('ruleLabel');
+  if(r.classList.contains('show')){r.classList.remove('show');r.innerHTML='';l.textContent='查看规则'}else{
+    r.classList.add('show');l.textContent='收起规则';
+    let html='<p style="font-weight:700;color:#444;margin-bottom:8px">数字 → 图形 对照表</p><div class="rgrid">';
+    for(let i=0;i<10;i++)html+=`<div class="ritem">${h(SVGS[i],40,40)}<div class="rd">${i}</div><div class="rn">${SN[i]}</div></div>`;
+    html+='</div>';r.innerHTML=html;
+  }
+}
+
+function renderLevels(){
+  let html='';for(let i=1;i<=Math.min(maxLevel,20);i++)html+=`<button class="lv" onclick="startGame(${i})">${i}</button>`;
+  $('levelSelect').innerHTML=html;
+}renderLevels();
+
+// ═══════════════════════ 关卡配置 ═══════════════════════
+function lvCfg(lv){
+  // 清晰难度：3 → 9 位数字/图形
+  if(lv<=2)return{c:3,label:'3位 · 入门'};
+  if(lv<=4)return{c:4,label:'4位 · 简单'};
+  if(lv<=6)return{c:5,label:'5位 · 普通'};
+  if(lv<=8)return{c:6,label:'6位 · 进阶'};
+  if(lv<=10)return{c:7,label:'7位 · 困难'};
+  if(lv<=12)return{c:8,label:'8位 · 挑战'};
+  return{c:9,label:'9位 · 极限'};
+}
+
+// ═══════════════════════ 游戏状态 ═══════════════════════
+let state=null;
+function startGame(lv){
+  document.body.onclick=unlockAudio;
+  const cfg=lvCfg(lv);
+  state={lv,q:[],idx:0,ans:[],ok:0,streak:0,maxs:0,wrong:false,cfg};
+  const total=5;
+  for(let i=0;i<total;i++){
+    const m=Math.random()>.5?'sn':'ns';
+    const p=[0,1,2,3,4,5,6,7,8,9];for(let j=p.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[p[j],p[k]]=[p[k],p[j]]}
+    let d;if(cfg.c>10)d=p.slice(0,10);else{d=[];const pool=[...p];for(let j=0;j<cfg.c;j++){const idx=Math.floor(Math.random()*pool.length);d.push(pool.splice(idx,1)[0]);if(!pool.length)pool.push(...[0,1,2,3,4,5,6,7,8,9])}}
+    state.q.push({d,m});
+  }
+  $('home').style.display='none';
+  $('game').classList.add('on');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q=state.q[state.idx],sn=q.m==='sn';
+  const gbar=$('game').querySelector('.gbar');
+  gbar.innerHTML=`<span class="lvl">Lv.${state.lv}</span><span class="prg">${state.cfg.label}</span><span class="prg">${state.idx+1}/${state.q.length}</span><span class="star">⭐ ${state.ok+totalStars}</span>${state.streak>=3?`<span class="fire">🔥${state.streak}</span>`:''}`;
+  $('game').querySelector('.prompt').textContent=sn?'这些图形是什么数字？':'这些数字是什么图形？';
+  let pz='';for(let i=0;i<q.d.length;i++)pz+=sn?`<div class="puz">${h(SVGS[q.d[i]],58,58)}</div>`:`<div class="puz digitbox">${q.d[i]}</div>`;
+  $('game').querySelector('.puzzle').innerHTML=pz;
+  let as='',sl='';for(let i=0;i<q.d.length;i++){
+    const cls='slot'+(i<state.ans.length?' ok':'')+(state.wrong?' err':'');
+    const content=i<state.ans.length?(sn?state.ans[i]:h(SVGS[state.ans[i]],34,34)):(sn?'_':'?');
+    // delay remove wrong class
+    if(state.wrong&&!state._wrongShown)sl=' err';else if(sl===' err')sl='';
+    as+=`<div class="slot${cls}${sl}">${content}</div>`;
+  }
+  $('game').querySelector('.answer').innerHTML=as;
+
+  if(state.wrong&&!state._wrongShown){
+    state._wrongShown=true;
+    const ca=sn?`${q.d.join('  ')}`:q.d.map(x=>`<span>${h(SVGS[x],34,34)}</span>`).join('');
+    $('game').querySelector('.msg').innerHTML=`<p>😅 再试一次！正确答案：</p><div class="ca">${ca}</div><button class="btn btn-go" style="margin-top:4px;padding:10px 22px;font-size:15px" onclick="nextQ()">下一题 ➡️</button>`;
+    $('game').querySelector('.msg').classList.add('on');
+  }else{
+    $('game').querySelector('.msg').classList.remove('on');
+    renderKbd(sn);
+  }
+}
+
+function renderKbd(sn){
+  const kb=$('game').querySelector('.kbd');
+  if(sn){ // 数字键盘
+    let html='<div class="row5">';
+    for(let i=0;i<10;i++)html+=`<button class="kn" onclick="input(${i})">${i}</button>`;
+    html+=`</div><div class="act-row"><button class="abtn abtn-bs" onclick="bs()">↩</button><button class="abtn abtn-ok" onclick="confirm()" ${state.ans.length!==state.q[state.idx].d.length?'disabled':''}>✅</button></div>`;
+    kb.innerHTML=html;
+  }else{ // 图形键盘
+    let html='<div class="row5">';
+    for(let i=0;i<10;i++)html+=`<button class="ks" onclick="input(${i})">${h(SVGS[i],38,38)}</button>`;
+    html+=`</div><div class="act-row"><button class="abtn abtn-bs" onclick="bs()">↩</button><button class="abtn abtn-ok" onclick="confirm()" ${state.ans.length!==state.q[state.idx].d.length?'disabled':''}>✅</button></div>`;
+    kb.innerHTML=html;
+  }
+}
+
+// ═══════════════════════ 输入 ═══════════════════════
+function input(d){
+  if(!state||state.wrong)return;
+  if(state.ans.length>=state.q[state.idx].d.length)return;
+  beep(800,.06,'sine',.04);
+  state.ans.push(d);renderQuestion();
+}
+function bs(){
+  if(!state||state.wrong||!state.ans.length)return;
+  beep(300,.06,'triangle',.04);
+  state.ans.pop();renderQuestion();
+}
+function confirm(){
+  if(!state||state.wrong)return;
+  const q=state.q[state.idx];
+  if(state.ans.length!==q.d.length)return;
+  if(q.d.every((x,i)=>x===state.ans[i])){ // ✓
+    playCorrect();fireSmall();
+    state.ok++;state.streak++;state.maxs=Math.max(state.maxs,state.streak);state.ans=[];
+    if(state.idx>=state.q.length-1){setTimeout(endRound,400);return}
+    state.idx++;renderQuestion();
+  }else{ // ✗
+    playWrong();
+    state.wrong=true;state._wrongShown=false;renderQuestion();
+  }
+}
+function nextQ(){
+  if(!state)return;
+  state.wrong=false;state.streak=0;state.ans=[];
+  if(state.idx>=state.q.length-1){endRound();return}
+  state.idx++;renderQuestion();
+}
+
+// ═══════════════════════ 结算 ═══════════════════════
+function endRound(){
+  let s=state.ok;if(state.maxs>=5)s+=2;else if(state.maxs>=3)s+=1;if(state.ok===state.q.length)s+=3;
+  const passed=state.ok>=Math.ceil(state.q.length*.6);
+  totalStars+=s;maxLevel=Math.max(maxLevel,passed?state.lv+1:state.lv);save();
+  $('starCount').textContent=totalStars;renderLevels();
+  $('game').classList.remove('on');
+  $('result').classList.add('on');
+  $('result').innerHTML=`<div class="result-emoji">${passed?'🎉':'💪'}</div><div class="result-title">${passed?'太棒了！':'继续加油！'}</div><div class="result-sub">${passed?`第 ${state.lv} 关通过！`:`答对 ${state.ok}/${state.q.length}`}</div><div class="result-score">+${s} ⭐</div><button class="btn btn-go" onclick="startGame(${passed?state.lv+1:state.lv})">${passed?`🚀 第 ${state.lv+1} 关`:'🔄 再试一次'}</button><br><br><button class="btn btn-sm" onclick="goHome()">🏠 回到主页</button>`;
+  if(passed){playWin();setTimeout(fireBig,300)}
+  state=null;
+}
+function goHome(){
+  $('result').classList.remove('on');
+  $('game').classList.remove('on');
+  $('home').style.display='';
+  state=null;
+}
+
+// ═══════════════════════ 音效 (Web Audio) ═══════════════════════
+let ac=null;
+function unlockAudio(){if(!ac){ac=new AudioContext();document.body.onclick=null}}
+function beep(f,d,t,g){if(!ac)return;const o=ac.createOscillator(),gn=ac.createGain();o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,ac.currentTime);gn.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.connect(gn);gn.connect(ac.destination);o.start(ac.currentTime);o.stop(ac.currentTime+d)}
+function playCorrect(){if(!ac)return;[523,659,784,1047].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.12,ac.currentTime+i*.08);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+i*.08+.22);o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.08);o.stop(ac.currentTime+i*.08+.22)})}
+function playWrong(){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(400,ac.currentTime);o.frequency.linearRampToValueAtTime(200,ac.currentTime+.25);g.gain.setValueAtTime(.1,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.3);o.connect(g);g.connect(ac.destination);o.start(ac.currentTime);o.stop(ac.currentTime+.3)}
+function playWin(){if(!ac)return;[523,659,784,1047,784,1047,1319].forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;const s=ac.currentTime+i*.1;g.gain.setValueAtTime(.15,s);g.gain.exponentialRampToValueAtTime(.001,s+.3);o.connect(g);g.connect(ac.destination);o.start(s);o.stop(s+.3)})}
+
+// ═══════════════════════ 烟花引擎 v2 ═══════════════════════
+const CC=['#FF6B6B','#FBBF24','#60A5FA','#4ADE80','#F87171','#C084FC','#FB923C','#F472B6','#2DD4BF','#FACC15','#FF85A2','#FFD93D','#6BCB77'];
+const EMO=['⭐','✨','🌟','💫','🎉','🎊','💖'];
+const G=380,FRIC=.997;
+let _ps=[],_af=null;
+
+function mkP(x,y,vx,vy,sz,lifeMs,delay,type,color){
+  const c=color||CC[Math.floor(Math.random()*CC.length)],el=document.createElement('div');el.className='part';
+  switch(type){
+    case'flash':el.style.width=sz+'px';el.style.height=sz+'px';el.style.borderRadius='50%';el.style.background='radial-gradient(circle,#fff 0%,#FFD93D 30%,transparent 70%)';el.style.filter='blur(2px)';break;
+    case'emoji':el.textContent=EMO[Math.floor(Math.random()*7)];el.style.fontSize=sz+'px';el.style.lineHeight='1';break;
+    case'spark':el.style.width=sz*.6+'px';el.style.height=sz*3+'px';el.style.borderRadius='1px';el.style.background=c;el.style.boxShadow='0 0 8px 3px '+c;break;
+    case'glow':el.style.width=sz*2.5+'px';el.style.height=sz*2.5+'px';el.style.borderRadius='50%';el.style.background='radial-gradient(circle,'+c+' 0%,transparent 70%)';el.style.filter='blur(.5px)';break;
+    case'trail':el.style.width=sz+'px';el.style.height=sz+'px';el.style.borderRadius='50%';el.style.background=c;el.style.boxShadow='0 0 4px 1px '+c;el.style.opacity='.7';break;
+    default:el.style.width=sz+'px';el.style.height=sz+'px';el.style.borderRadius='50%';el.style.background=c;el.style.boxShadow='0 0 6px 2px '+c;
+  }
+  $('confetti').appendChild(el);
+  return{el,x,y,vx,vy,rot:Math.random()*360,rsp:(Math.random()-.5)*400,delay,lif:lifeMs/1000,birth:performance.now(),dead:false,type,sz};
+}
+
+function startLoop(){
+  if(_af)return;
+  let lt=performance.now();
+  (function loop(now){
+    const dt=Math.min((now-lt)/1000,.05);lt=now;let alive=false;
+    for(const p of _ps){
+      if(p.dead)continue;
+      const e=(now-p.birth-p.delay)/1000;
+      if(e<0){alive=true;continue}
+      if(e>p.lif){p.el.remove();p.dead=true;continue}
+      alive=true;
+      p.vy+=G*dt;p.vx*=FRIC;p.vy*=FRIC;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.rsp*dt;
+      const pr=e/p.lif;
+      let sc=pr<.1?.3+pr*7:pr<.6?1:1-((pr-.6)/.4)*.5;
+      let op=pr<.75?1:1-((pr-.75)/.25);
+      if(p.type==='flash'){sc=1+pr*2;op=pr<.2?1:1-((pr-.2)/.8)}
+      p.el.style.transform='translate('+p.x+'px,'+p.y+'px) rotate('+p.rot+'deg) scale('+Math.max(.01,sc)+')';
+      p.el.style.opacity=Math.max(0,op);
+    }
+    if(alive)_af=requestAnimationFrame(loop);
+    else{_ps.length=0;_af=null;$('confetti').innerHTML=''}
+  })(lt);
+}
+
+function burst(cx,cy,n,o){
+  o=o||{};
+  const ha=o.ha||.4,minS=o.minS||350,maxS=o.maxS||700;
+  const minL=o.minL||1.5,maxL=o.maxL||2.8,minSz=o.minSz||3,maxSz=o.maxSz||9;
+  const cw=o.cw==null?.7:o.cw,ds=o.ds||0,dd=o.dd||40;
+  _ps.push(mkP(cx,cy,0,0,25+Math.random()*15,300+Math.random()*200,ds,'flash','#FFFDE7'));
+  for(let i=0;i<n;i++){
+    const raw=Math.random()<cw?Math.random()*Math.random():Math.random();
+    const a=raw*ha*(Math.random()>.5?1:-1);
+    const spd=minS+Math.random()*(maxS-minS);
+    const vx=Math.sin(a)*spd,vy=-Math.cos(a)*spd;
+    const lif=minL+Math.random()*(maxL-minL);
+    const sz=minSz+Math.random()*(maxSz-minSz);
+    const r=Math.random();
+    const type=r<.12?'emoji':r<.3?'spark':r<.6?'glow':'dot';
+    const s=type==='emoji'?sz*3:type==='spark'?sz*.7:sz;
+    _ps.push(mkP(cx,cy,vx,vy,s,lif*1000,ds+Math.random()*dd,type));
+  }
+}
+
+// 小题烟花：单点中心加权圆锥爆裂
+function fireSmall(){
+  $('confetti').innerHTML='';_ps.length=0;if(_af){cancelAnimationFrame(_af);_af=null}
+  const W=innerWidth,H=innerHeight;
+  burst(W/2+(Math.random()-.5)*40,H-40,40,{ha:.4,minS:380,maxS:680,minL:1.5,maxL:2.5,minSz:3,maxSz:8,cw:.7,dd:40});
+  startLoop();
+}
+
+// 大烟花：8波齐射 + 火箭拖尾
+function fireBig(){
+  $('confetti').innerHTML='';_ps.length=0;if(_af){cancelAnimationFrame(_af);_af=null}
+  const W=innerWidth,H=innerHeight,Y=H-40;
+  const S=[
+    {cx:W*.5,  d:0,   n:70,ha:.35,minS:420,maxS:750,minL:2,maxL:3.2,minSz:3,maxSz:9,cw:.75},
+    {cx:W*.22, d:180, n:50,ha:.42,minS:380,maxS:680,minL:1.8,maxL:2.8,minSz:3,maxSz:8,cw:.65},
+    {cx:W*.78, d:180, n:50,ha:.42,minS:380,maxS:680,minL:1.8,maxL:2.8,minSz:3,maxSz:8,cw:.65},
+    {cx:W*.35, d:400, n:55,ha:.45,minS:350,maxS:620,minL:1.6,maxL:2.5,minSz:3,maxSz:7,cw:.6},
+    {cx:W*.65, d:400, n:55,ha:.45,minS:350,maxS:620,minL:1.6,maxL:2.5,minSz:3,maxSz:7,cw:.6},
+    {cx:W*.12, d:600, n:40,ha:.5, minS:320,maxS:560,minL:1.4,maxL:2.2,minSz:2,maxSz:6,cw:.55},
+    {cx:W*.88, d:600, n:40,ha:.5, minS:320,maxS:560,minL:1.4,maxL:2.2,minSz:2,maxSz:6,cw:.55},
+    {cx:W*.5,  d:800, n:80,ha:.32,minS:480,maxS:820,minL:2.2,maxL:3.5,minSz:4,maxSz:11,cw:.8}
+  ];
+  for(const s of S){
+    for(let i=0;i<8;i++)_ps.push(mkP(s.cx+(Math.random()-.5)*6,Y-i*8,(Math.random()-.5)*15,-500-Math.random()*200,2+Math.random()*3,600+Math.random()*300,s.d+i*15,'trail','#FFD93D'));
+    burst(s.cx,Y,s.n,{ha:s.ha,minS:s.minS,maxS:s.maxS,minL:s.minL,maxL:s.maxL,minSz:s.minSz,maxSz:s.maxSz,cw:s.cw,ds:s.d,dd:30});
+  }
+  startLoop();
+}
+
+</script>
+</body>
+</html>
